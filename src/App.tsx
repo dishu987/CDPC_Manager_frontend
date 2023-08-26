@@ -1,33 +1,54 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
+import { Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./components/login";
+import Dashboard from "./components/dashboard";
+import { useSelector } from "react-redux";
+import ViewCompany from "./components/dashboard/company/view";
+import Navbar from "./components/common/navbar";
+import Multistep from "./components/dashboard/company/add";
+import RegisterForm from "./components/users/cordinators/add";
+import ChangePassword from "./components/users/changepassword";
+import StudentCoordinatorList from "./components/users/cordinators";
+import UserProfile from "./components/users/profle";
+import { useEffect } from "react";
+import { handleTokenExpiration } from "./services/api-client/renewtoken";
+import { useDispatch } from "react-redux";
+import { getTokenExpiredAction } from "./redux-store/reducer/slice/authReducer";
 
 function App() {
-  const [count, setCount] = useState(0);
-
+  const dispatch = useDispatch();
+  const refresh = useSelector((state: any) => state.getauth.data.token.refresh);
+  const getuser = useSelector((state: any) => state.getauth);
+  useEffect(() => {
+    if (getuser.isSuccessful && getuser.isExpired) {
+      console.log("Expired Function Called!!");
+      dispatch(getTokenExpiredAction(refresh));
+      // handleTokenExpiration(dispatch, refresh);
+    }
+  }, []);
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      {getuser.isSuccessful && <Navbar />}
+      <Routes>
+        {!getuser.isSuccessful && (
+          <>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={<Navigate to={"/login"} />} />
+          </>
+        )}
+        {getuser.isSuccessful && (
+          <>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/company/:id" element={<ViewCompany />} />
+            <Route path="/company/add" element={<Multistep />} />
+            <Route path="/profile/:id" element={<UserProfile />} />
+            <Route path="/cordinators/add" element={<RegisterForm />} />
+            <Route path="/cordinators" element={<StudentCoordinatorList />} />
+            <Route path="/changepassword" element={<ChangePassword />} />
+            <Route path="*" element={<Navigate to={"/"} />} />
+          </>
+        )}
+      </Routes>
     </>
   );
 }
